@@ -1,4 +1,4 @@
-import { InferenceHTTPClient } from "@roboflow/inference-sdk/api";
+
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
