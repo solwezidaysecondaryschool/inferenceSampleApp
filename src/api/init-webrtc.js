@@ -1,6 +1,8 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
   }
 
   const apiKey = process.env.ROBOFLOW_API_KEY;
@@ -13,11 +15,13 @@ export default async function handler(req, res) {
 
   try {
     const body =
-      typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+      typeof req.body === "string"
+        ? JSON.parse(req.body)
+        : req.body || {};
 
     let payload;
 
-    // Format used by SDK versions that already send Roboflow's native request.
+    // Accept a request already formatted for Roboflow.
     if (body.webrtc_offer && body.workflow_configuration) {
       payload = {
         ...body,
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
         }
       };
     } else {
-      // Format used by proxy connectors.
+      // Accept the format sent by the browser proxy connector.
       const offer =
         body.offer ||
         body.webrtcOffer ||
@@ -51,6 +55,7 @@ export default async function handler(req, res) {
         api_key: apiKey,
         is_preview: false,
         webrtc_offer: offer,
+
         workflow_configuration: {
           type: "WorkflowConfiguration",
           workspace_name:
@@ -59,26 +64,35 @@ export default async function handler(req, res) {
             params.workflowId || "no-phone-zone-v9-logic",
           image_input_name:
             params.imageInputName || "image",
-          workflows_parameters: params.workflowParameters || {},
+          workflows_parameters:
+            params.workflowParameters || {},
           workflows_thread_pool_workers: 4,
           cancel_thread_pool_tasks_on_exit: true,
           video_metadata_input_name: "video_metadata",
           disable_sinks: false
         },
+
         stream_output:
           params.streamOutputNames || ["output_image"],
+
         data_output:
           params.dataOutputNames || [
             "predictions",
             "phone_count",
             "make_webhook_error",
+            "make_webhook_throttled",
             "make_webhook_message"
           ],
-        processing_timeout: params.processingTimeout || 3600,
+
+        processing_timeout:
+          params.processingTimeout || 3600,
+
         requested_plan:
           params.requestedPlan || "webrtc-gpu-medium",
+
         requested_region:
           params.requestedRegion || "us",
+
         webrtc_realtime_processing: true
       };
     }
@@ -97,10 +111,13 @@ export default async function handler(req, res) {
     const responseText = await response.text();
 
     let responseData;
+
     try {
       responseData = JSON.parse(responseText);
     } catch {
-      responseData = { error: responseText };
+      responseData = {
+        error: responseText
+      };
     }
 
     if (!response.ok) {
