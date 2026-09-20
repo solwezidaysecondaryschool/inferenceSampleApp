@@ -16,11 +16,11 @@ export default async function handler(req, res) {
 
     if (!offer || !wrtcparams) {
       return res.status(400).json({
-        error: "Missing WebRTC offer or Workflow parameters"
+        error: "Missing WebRTC offer or workflow parameters"
       });
     }
 
-    const roboflowResponse = await fetch(
+    const response = await fetch(
       "https://serverless.roboflow.com/initialise_webrtc_worker",
       {
         method: "POST",
@@ -39,8 +39,7 @@ export default async function handler(req, res) {
           stream_output: wrtcparams.streamOutputNames || ["output_image"],
           data_output: wrtcparams.dataOutputNames || ["predictions"],
           processing_timeout: wrtcparams.processingTimeout || 3600,
-          requested_plan:
-            wrtcparams.requestedPlan || "webrtc-gpu-medium",
+          requested_plan: wrtcparams.requestedPlan || "webrtc-gpu-medium",
           requested_region: wrtcparams.requestedRegion || "us",
           webrtc_realtime_processing: true,
           is_preview: false
@@ -48,35 +47,27 @@ export default async function handler(req, res) {
       }
     );
 
-    const responseText = await roboflowResponse.text();
+    const text = await response.text();
 
-    let responseBody;
+    let data;
     try {
-      responseBody = JSON.parse(responseText);
+      data = JSON.parse(text);
     } catch {
-      responseBody = { error: responseText };
+      data = { error: text };
     }
 
-    if (!roboflowResponse.ok) {
-      console.error("Roboflow error:", responseBody);
-
-      return res.status(roboflowResponse.status).json({
-        error:
-          responseBody?.detail ||
-          responseBody?.error ||
-          "Roboflow WebRTC initialization failed"
-      });
+    if (!response.ok) {
+      return res.status(response.status).json(data);
     }
 
-    return res.status(200).json(responseBody);
+    return res.status(200).json(data);
   } catch (error) {
     console.error("WebRTC proxy error:", error);
 
     return res.status(500).json({
-      error:
-        error instanceof Error
-          ? error.message
-          : "WebRTC initialization failed"
+      error: error instanceof Error
+        ? error.message
+        : "WebRTC initialization failed"
     });
   }
 }
